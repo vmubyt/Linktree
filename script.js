@@ -17,14 +17,14 @@ let trailPoolSize = 0;
 const STARS_CONFIG = {
     // Star count and performance
     count: {
-        min: 4000,  // Minimum stars
-        max: 7500   // Maximum stars
+        min: 4000,  // Minimum stars (desktop full features)
+        max: 7500   // Maximum stars (desktop full features)
     },
     
     // Star size configuration (in pixels, FIXED size like links-master)
     size: {
-        min: 0.4,  // Minimum star radius (fixed, not scaled by devicePixelRatio) - 2x smaller
-        max: 1.0   // Maximum star radius (fixed, not scaled by devicePixelRatio) - 2x smaller
+        min: 0.4,  // Minimum star radius (desktop original size)
+        max: 1.0   // Maximum star radius (desktop original size)
     },
     
     // Star opacity and flicker
@@ -52,6 +52,8 @@ const STARS_CONFIG = {
         b: 255   // Blue component
     }
 };
+
+
 
 // Orbital system configuration - continuous 4 zones
 const ORBITAL_CONFIG = {
@@ -81,10 +83,18 @@ const ORBITAL_CONFIG = {
     // Trail pool configuration
     const TRAIL_CONFIG = {
         poolPercentage: 0.07,   // 7% of stars can have trails (reduced from 10%)
-        maxTrailPoints: 100,     // Longer trails for better visibility
+        maxTrailPoints: 100,     // Desktop trail length (original)
         fadeOutFactor: 0.94,    // Slower fade out (0.94 = 6% fade per point)
         canvasMargin: 100       // Larger margin for better detection
     };
+    
+    // Device-specific trail configuration
+    function getTrailFadeOutFactor() {
+        const isMobile = width <= 768;
+        return isMobile ? 0.97 : TRAIL_CONFIG.fadeOutFactor; // Mobile: slower fade (0.97), Desktop: 0.94
+    }
+
+
 
 function initStarTrails() {
     canvas = document.querySelector('#bg-stars');
@@ -106,20 +116,24 @@ function initStarTrails() {
     console.log(`📍 Center: (${centerX.toFixed(0)}, ${centerY.toFixed(0)}) - Right edge center`);
     console.log(`🔄 Rotation: Counter-clockwise (positive omega)`);
     console.log(`⭐ Stars: ${stars.length} stars in 4 continuous zones`);
-    console.log(`   📊 Count: ${STARS_CONFIG.count.min}-${STARS_CONFIG.count.max} stars (adjusted for device)`);
+    console.log(`   📊 Count: ${STARS_CONFIG.count.min}-${STARS_CONFIG.count.max} stars (desktop full features)`);
     console.log(`   📱 Device: ${width <= 768 ? 'Mobile' : 'Desktop'} (${width}x${height})`);
-    console.log(`   📏 Size: ${STARS_CONFIG.size.min}-${STARS_CONFIG.size.max}px radius (FIXED, no devicePixelRatio scaling)`);
+    console.log(`   📏 Size: ${STARS_CONFIG.size.min}-${STARS_CONFIG.size.max}px radius (desktop original, mobile 2x bigger)`);
     console.log(`   🎨 Color: RGB(${STARS_CONFIG.color.r}, ${STARS_CONFIG.color.g}, ${STARS_CONFIG.color.b})`);
     console.log(`   ✨ Opacity: ${STARS_CONFIG.opacity.base.min}-${STARS_CONFIG.opacity.base.max} base, ${STARS_CONFIG.opacity.flicker.frequency.min}-${STARS_CONFIG.opacity.flicker.frequency.max}Hz flicker`);
     console.log(`🎯 Zone 1 (inner): ~60s period, Zone 4 (outer): ~240s period (3x slower)`);
     const eligibleStars = stars.filter(s => s.canHaveTrail).length;
-    console.log(`🌊 Trail Pool: ${trailPoolSize} available trails (${eligibleStars} eligible stars, ${(TRAIL_CONFIG.poolPercentage * 100).toFixed(0)}% of total)`);
+    const trailLength = getTrailLength();
+    const isMobile = width <= 768;
+    const cometZoneInfo = isMobile ? 'zones 1-3 only' : 'all zones';
+    console.log(`🌊 Trail Pool: ${trailPoolSize} available trails (${eligibleStars} eligible stars, ${(TRAIL_CONFIG.poolPercentage * 100).toFixed(0)}% of total, ${trailLength} points per trail, ${cometZoneInfo})`);
     console.log(`🚀 Comets: 0.2x faster, smallest comets: +0.2x faster (reduced to 7%)`);
     console.log(`⭐ Large stars in Zone 2-4: 0.5x slower (zone-based distribution)`);
     console.log(`✨ Natural Twinkling: 5% of small stars (0.08-0.12 Hz, 18-22% intensity)`);
     console.log(`📱 Desktop extras: Zone 1 (+80%), Zone 2 (+15%)`);
     console.log(`🌅 Ambient light: ${width <= 768 ? '1/3 canvas coverage (120% radius, same as desktop)' : '4/5 canvas coverage (120% radius to avoid center hole)'}`);
     console.log(`✨ Enhanced gradient: ${width <= 768 ? 'Mobile (7 stops)' : 'Desktop (12 stops)'} for ultra-smooth transitions`);
+    console.log(`📱 Mobile Optimization: ${width <= 768 ? 'Reduced star count (1500-3000), 1.5x bigger stars (0.6-1.5px), longer trails (120 points), 30% faster orbital, comets only in zones 1-3 for better performance' : 'Full desktop features (4000-7500 stars, original size 0.4-1.0px, standard trails 100 points, comets in all zones)'}`);
 
     
     // Handle resize
@@ -158,16 +172,24 @@ function calculateOptimalStarCount() {
     const isMobile = width <= 768; // Mobile breakpoint
     
     if (isMobile) {
-        // Reduce stars by 0.5x for smartphone
-        adjustedCount = Math.floor(baseCount * 0.5);
+        // Reduce stars by 0.3x for smartphone (mobile optimization)
+        adjustedCount = Math.floor(baseCount * 0.3);
     } else {
-        // Increase stars by 0.5x for desktop
+        // Desktop: Full features with original star count
         adjustedCount = Math.floor(baseCount * 1.5);
     }
     
-    return Math.max(STARS_CONFIG.count.min, 
-                   Math.min(adjustedCount, STARS_CONFIG.count.max));
+    // For desktop, ensure we get full star count range
+    if (!isMobile) {
+        return Math.max(STARS_CONFIG.count.min, 
+                       Math.min(adjustedCount, STARS_CONFIG.count.max));
+    } else {
+        // For mobile, use reduced range
+        return Math.max(1500, Math.min(adjustedCount, 3000)); // Mobile-specific range
+    }
 }
+
+
 
 function generateStars() {
     stars = [];
@@ -181,10 +203,34 @@ function generateStars() {
     const trailEligibleCount = Math.floor(starCount * TRAIL_CONFIG.poolPercentage);
     const trailEligibleIndices = new Set();
     
-    // Randomly select which stars can have trails
-    while (trailEligibleIndices.size < trailEligibleCount) {
-        const randomIndex = Math.floor(Math.random() * starCount);
-        trailEligibleIndices.add(randomIndex);
+    // For mobile: only select stars from zones 1-3 for trails (zona 4 too far from canvas)
+    const isMobile = width <= 768;
+    
+    if (isMobile) {
+        // Mobile: Only select stars from zones 1-3 for trails
+        let selectedCount = 0;
+        let attempts = 0;
+        const maxAttempts = starCount * 10; // Prevent infinite loop
+        
+        while (selectedCount < trailEligibleCount && attempts < maxAttempts) {
+            const randomIndex = Math.floor(Math.random() * starCount);
+            attempts++;
+            
+            // Check if this star is in zones 1-3
+            const radiusRatio = Math.sqrt(Math.random());
+            const zone = 1 + 3 * radiusRatio;
+            
+            if (zone < 4) { // Only zones 1-3
+                trailEligibleIndices.add(randomIndex);
+                selectedCount++;
+            }
+        }
+    } else {
+        // Desktop: Randomly select which stars can have trails (all zones)
+        while (trailEligibleIndices.size < trailEligibleCount) {
+            const randomIndex = Math.floor(Math.random() * starCount);
+            trailEligibleIndices.add(randomIndex);
+        }
     }
     
     for (let i = 0; i < starCount; i++) {
@@ -200,7 +246,13 @@ function generateStars() {
         const zone = 1 + 3 * rNorm;
         
         // Calculate period: T = 60 * z (3x slower than before)
-        const basePeriod = 60 * zone;
+        let basePeriod = 60 * zone;
+        
+        // Mobile: Faster orbital speed to compensate for fewer stars
+        const isMobile = width <= 768;
+        if (isMobile) {
+            basePeriod *= 0.7; // 30% faster for mobile
+        }
         
         // Add jitter ±5%
         const jitter = 0.95 + Math.random() * 0.1; // ±5% variation
@@ -210,17 +262,26 @@ function generateStars() {
         // Positive omega = counter-clockwise rotation (standard orbital direction)
         let omega = (2 * Math.PI) / period;
         
-        // Determine star size based on zone distribution
+        // Determine star size based on zone distribution and device
         let size;
-        const sizeRange = STARS_CONFIG.size.max - STARS_CONFIG.size.min;
-        const smallMediumThreshold = STARS_CONFIG.size.min + sizeRange * 0.6; // 60% of range for small-medium
-        const largeThreshold = STARS_CONFIG.size.min + sizeRange * 0.8; // 80% of range for large
-        const smallThreshold = STARS_CONFIG.size.min + sizeRange * 0.4; // 40% of range for small stars
+        
+        // Mobile: 1.5x bigger stars for better visibility (reduced from 2x)
+        const mobileSizeMin = STARS_CONFIG.size.min * 1.5; // 0.6
+        const mobileSizeMax = STARS_CONFIG.size.max * 1.5; // 1.5
+        
+        // Use device-specific size range
+        const actualSizeMin = isMobile ? mobileSizeMin : STARS_CONFIG.size.min;
+        const actualSizeMax = isMobile ? mobileSizeMax : STARS_CONFIG.size.max;
+        const sizeRange = actualSizeMax - actualSizeMin;
+        
+        const smallMediumThreshold = actualSizeMin + sizeRange * 0.6; // 60% of range for small-medium
+        const largeThreshold = actualSizeMin + sizeRange * 0.8; // 80% of range for large
+        const smallThreshold = actualSizeMin + sizeRange * 0.4; // 40% of range for small stars
         
         // Zone-based size distribution
         if (zone < 2) {
             // Zone 1: Only small and medium stars
-            size = STARS_CONFIG.size.min + Math.random() * (smallMediumThreshold - STARS_CONFIG.size.min);
+            size = actualSizeMin + Math.random() * (smallMediumThreshold - actualSizeMin);
         } else if (zone >= 2 && zone < 4) {
             // Zone 2-3: Mix of all sizes with zone-based distribution
             const zoneFactor = (zone - 2) / 1; // 0 for zone 2, 1 for zone 3
@@ -233,10 +294,10 @@ function generateStars() {
             
             if (Math.random() < largeStarChance) {
                 // Large star
-                size = largeThreshold + Math.random() * (STARS_CONFIG.size.max - largeThreshold);
+                size = largeThreshold + Math.random() * (actualSizeMax - largeThreshold);
             } else if (Math.random() < smallMediumChance) {
                 // Small-medium star
-                size = STARS_CONFIG.size.min + Math.random() * (smallMediumThreshold - STARS_CONFIG.size.min);
+                size = actualSizeMin + Math.random() * (smallMediumThreshold - actualSizeMin);
             } else {
                 // Medium-large star
                 size = smallMediumThreshold + Math.random() * (largeThreshold - smallMediumThreshold);
@@ -245,7 +306,7 @@ function generateStars() {
             // Zone 4: Mostly large stars (80% chance) with rare medium stars (20% chance)
             if (Math.random() < 0.8) {
                 // Large star (80% chance)
-                size = largeThreshold + Math.random() * (STARS_CONFIG.size.max - largeThreshold);
+                size = largeThreshold + Math.random() * (actualSizeMax - largeThreshold);
             } else {
                 // Medium star (20% chance) - rare in zone 4
                 size = smallMediumThreshold + Math.random() * (largeThreshold - smallMediumThreshold);
@@ -265,7 +326,7 @@ function generateStars() {
             omega *= 1.2;
             
             // Comets with smallest size are 0.2x faster than other comets
-            const isSmallestComet = size <= (STARS_CONFIG.size.min + sizeRange * 0.2);
+            const isSmallestComet = size <= (actualSizeMin + sizeRange * 0.2);
             if (isSmallestComet) {
                 omega *= 1.2; // Additional 0.2x faster for smallest comets
             }
@@ -433,6 +494,8 @@ function drawAmbientLight() {
 
 
 
+
+
 function renderStars(currentTime) {
     // Clear canvas with transparent background to show CSS gradient
     context.clearRect(0, 0, width, height);
@@ -591,6 +654,14 @@ function handleVisibilityChange() {
 }
 
 // Trail pool system functions
+function getTrailLength() {
+    // Mobile gets slightly longer trails, desktop keeps original length
+    const isMobile = width <= 768;
+    const trailLength = isMobile ? 120 : TRAIL_CONFIG.maxTrailPoints; // Mobile: 120 points, Desktop: 100 points
+    
+    return trailLength;
+}
+
 function initTrailPool() {
     trailPoolSize = Math.floor(stars.length * TRAIL_CONFIG.poolPercentage);
     trailPool = [];
@@ -605,7 +676,8 @@ function initTrailPool() {
         });
     }
     
-    console.log(`🌊 Trail pool initialized with ${trailPoolSize} available trails`);
+    const trailLength = getTrailLength();
+    console.log(`🌊 Trail pool initialized with ${trailPoolSize} available trails (${trailLength} points per trail)`);
 }
 
 function getAvailableTrail() {
@@ -670,8 +742,9 @@ function updateStarTrails(dt) {
             if (trail) {
                 trail.points.push([x, y]);
                 
-                // Trim trail to max length
-                if (trail.points.length > TRAIL_CONFIG.maxTrailPoints) {
+                // Trim trail to max length (device-specific)
+                const maxTrailLength = getTrailLength();
+                if (trail.points.length > maxTrailLength) {
                     trail.points.shift();
                 }
             }
@@ -699,9 +772,10 @@ function renderTrails(currentTime) {
                     
                                          
                     
-                    // Calculate fade based on position in trail
+                    // Calculate fade based on position in trail (device-specific)
                     const fadeRatio = i / trailLength;
-                    const fadeAlpha = Math.pow(TRAIL_CONFIG.fadeOutFactor, (trailLength - i));
+                    const fadeOutFactor = getTrailFadeOutFactor();
+                    const fadeAlpha = Math.pow(fadeOutFactor, (trailLength - i));
                     
                     // Use same color and size as the star
                     const flickerValue = Math.sin(2 * Math.PI * currentTime * star.flickerFreq + star.phase);
