@@ -16,7 +16,7 @@ git clone https://github.com/vmubyt/linktree.git
 
 Once the files are on your machine:
 
-• Open the `linktree` folder in `Visual Studio Code`  
+• Open the `linktree` folder in [Visual Studio Code](https://code.visualstudio.com/)  
 • With the files open in Visual Studio Code, press the `Go Live` button at the bottom of the window to launch the files with `Live Server`  
 • Change the profile image and texts in the `index.html` file  
 • Change the colors and fonts in the `styles.css` file  
@@ -60,3 +60,4 @@ This project is licensed under the Personal Use License - see the [LICENSE.md](L
 ---
 
 **Made with 🤍 by vmubyt**
+
