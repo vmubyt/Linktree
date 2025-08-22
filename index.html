@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SERVER48 | Linktree</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="assets/favicon.ico" rel="icon">
+    <!-- Import Poppins font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Import animate.css for animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</head>
+<body>
+    <canvas id="bg-stars"></canvas>
+    <div class="container">
+        <div class="logo-area">
+            <img src="assets/server48.png" alt="Server48 Logo">
+        </div>
+        <p class="social-media">✨ Social Media ✨</p>
+    <a href="https://www.youtube.com/@VMUB/" target="_blank" class="button"><img src="assets/youtube.png" class="icon">Channel YouTube</a>
+    <a href="https://discord.com/invite/289xFUnpyd" target="_blank" class="button"><img src="assets/discord.png" class="icon">Server Discord</a>
+    <a href="https://twitter.com/SERVER48_ID" target="_blank" class="button"><img src="assets/twitter.png" class="icon">Twitter / X</a>
+    <a href="https://linktr.ee/server48" target="_blank" class="button"><img src="assets/linktr.svg" class="icon">Linktr.ee/SERVER48</a>
+</div>
+    <div class="footer">Created by vmubyt</div>
+    <script>
+        window.onload = function() {
+            var buttons = document.querySelectorAll('.button'); // Select all elements with 'button' class
+
+            buttons.forEach(button => {
+                button.classList.add('animate-fade-out'); // Add 'animate-fade-out' class to each button element
+
+                setTimeout(function() {
+                    button.classList.remove('animate-fade-out'); // Remove 'animate-fade-out' class after fade out animation completes
+                    button.classList.add('animate-fade-in'); // Add 'animate-fade-in' class after fade out animation completes
+                }, 100); // Adjust to fade out animation duration (in milliseconds)
+            });
+        };
+
+        // Set button max width based on current desktop layout
+        function setButtonMaxWidth() {
+            // Check if viewport is desktop (≥1024px)
+            if (window.innerWidth >= 1024) {
+                // Get the computed width of the container
+                const container = document.querySelector('.container');
+                if (container) {
+                    const computedWidth = container.offsetWidth;
+                    // Set CSS variable with the measured width for maximum limit
+                    document.documentElement.style.setProperty('--button-maxw', computedWidth + 'px');
+                    console.log('Button max width set to:', computedWidth + 'px');
+                }
+            }
+        }
+
+        // Run on first paint and window resize
+        window.addEventListener('load', setButtonMaxWidth);
+        window.addEventListener('resize', setButtonMaxWidth);
+
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
