@@ -82,7 +82,7 @@ const ORBITAL_CONFIG = {
 
     // Trail pool configuration
     const TRAIL_CONFIG = {
-        poolPercentage: 0.07,   // 7% of stars can have trails (reduced from 10%)
+        poolPercentage: 0.07,   // 7% of stars can have trails (back to original)
         maxTrailPoints: 100,     // Desktop trail length (original)
         fadeOutFactor: 0.94,    // Slower fade out (0.94 = 6% fade per point)
         canvasMargin: 100       // Larger margin for better detection
@@ -172,8 +172,8 @@ function calculateOptimalStarCount() {
     const isMobile = width <= 768; // Mobile breakpoint
     
     if (isMobile) {
-        // Reduce stars by 0.3x for smartphone (mobile optimization)
-        adjustedCount = Math.floor(baseCount * 0.3);
+        // Reduce stars by 0.25x for smartphone (25% reduction)
+        adjustedCount = Math.floor(baseCount * 0.25);
     } else {
         // Desktop: Full features with original star count
         adjustedCount = Math.floor(baseCount * 1.5);
@@ -185,7 +185,7 @@ function calculateOptimalStarCount() {
                        Math.min(adjustedCount, STARS_CONFIG.count.max));
     } else {
         // For mobile, use reduced range
-        return Math.max(1500, Math.min(adjustedCount, 3000)); // Mobile-specific range
+        return Math.max(1500, Math.min(adjustedCount, 3000)); // Mobile-specific range (back to original)
     }
 }
 
@@ -657,7 +657,7 @@ function handleVisibilityChange() {
 function getTrailLength() {
     // Mobile gets slightly longer trails, desktop keeps original length
     const isMobile = width <= 768;
-    const trailLength = isMobile ? 120 : TRAIL_CONFIG.maxTrailPoints; // Mobile: 120 points, Desktop: 100 points
+    const trailLength = isMobile ? 120 : TRAIL_CONFIG.maxTrailPoints; // Mobile: 120 points (back to original), Desktop: 100 points
     
     return trailLength;
 }
